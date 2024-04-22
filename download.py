@@ -1,3 +1,3 @@
-from resemble.resemble_enhance.enhancer import load_enhancer
+from resemble_enhance.enhancer.inference import download
 
-load_enhancer("./weights", "cuda")
+download()

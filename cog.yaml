@@ -21,6 +21,8 @@ build:
     - "torchvision==0.16.1"
     - "tqdm==4.66.1"
     - "resemble-enhance==0.0.1"
+  run:
+    - "python -c 'from resemble_enhance.enhancer.inference import download; download()'"
 
 # predict.py defines how predictions are run on your model
 predict: "predict.py:Predictor"
