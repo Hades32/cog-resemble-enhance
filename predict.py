@@ -32,6 +32,10 @@ class Predictor(BasePredictor):
             description="Denoise the audio",
             default=False
         ),
+        denoise_only: bool = Input(
+            description="Only run and return denoise",
+            default=False
+        ),
     ) -> List[Path]:
         """Run a single prediction on the model"""
         if torch.cuda.is_available():
@@ -39,25 +43,28 @@ class Predictor(BasePredictor):
         else:
             device = "cpu"
 
-        solver = solver.lower()
-        nfe = int(number_function_evaluations)
-        lambd = 0.9 if denoise_flag else 0.1
+        outputs = []
+        output_path1 = "/tmp/output-denoised.wav"
+        output_path2 = "/tmp/output-enhanced.wav"
 
         dwav, sr = torchaudio.load(str(input_audio))
         dwav = dwav.mean(dim=0)
 
         wav1, new_sr1 = denoise(dwav, sr, device)
-        wav2, new_sr2 = enhance(dwav, sr, device, nfe=nfe, solver=solver, lambd=lambd, tau=prior_temperature)
-
         wav1 = wav1.unsqueeze(0)
-        wav2 = wav2.unsqueeze(0)
-
-        outputs = []
-        output_path1 = "/tmp/output-denoised.wav"
-        output_path2 = "/tmp/output-enhanced.wav"
         torchaudio.save(output_path1, wav1, new_sr1)
-        torchaudio.save(output_path2, wav2, new_sr2)
         outputs.append(Path(output_path1))
+
+        if denoise_only:
+            return outputs
+        
+        solver = solver.lower()
+        nfe = int(number_function_evaluations)
+        lambd = 0.9 if denoise_flag else 0.1
+        
+        wav2, new_sr2 = enhance(dwav, sr, device, nfe=nfe, solver=solver, lambd=lambd, tau=prior_temperature)
+        wav2 = wav2.unsqueeze(0)
+        torchaudio.save(output_path2, wav2, new_sr2)
         outputs.append(Path(output_path2))
 
         return outputs
